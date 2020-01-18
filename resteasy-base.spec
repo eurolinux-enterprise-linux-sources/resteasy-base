@@ -4,7 +4,7 @@
 
 Name:           resteasy-base
 Version:        3.0.6
-Release:        1%{?dist}
+Release:        4%{?dist}
 Summary:        Framework for RESTful Web services and Java applications
 License:        ASL 2.0 and CDDL
 URL:            http://www.jboss.org/resteasy
@@ -16,6 +16,9 @@ Source0:        %{prodname}-%{namedversion}.tar.gz
 Patch0:         0001-Mime4j-0.7.2-support.patch
 Patch1:         0002-bcmail-api-change.patch
 Patch2:		%{prodname}-%{namedversion}-resteasy-1073.patch
+Patch3:         %{prodname}-%{namedversion}-resteasy-1280539.patch
+Patch4:         %{prodname}-%{namedversion}-resteasy-1357624.patch
+Patch5:         %{prodname}-%{namedversion}-resteasy-1378619.patch
 
 BuildArch: noarch
 
@@ -216,6 +219,9 @@ done
 %patch0 -p1
 %patch1 -p0
 %patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 # additional gId:aId for jaxrs-api
 %mvn_alias ":jaxrs-api" "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_1.1_spec"
@@ -262,6 +268,15 @@ done
 
 
 %changelog
+* Mon Sep 26 2016 Ade Lee <alee@redhat.com> - 3.0.6-4
+- Resolves: rhbz1378619 - disable SerializerProvider by default 
+
+* Thu Jul 28 2016 Ade Lee <alee@redhat.com> - 3.0.6-3
+- Resolves: rhbz1357624 - fail to build with java 8
+
+* Fri Jun 24 2016 Ade Lee <alee@redhat.com> - 3.0.6-2
+- Resolves: rhbz1280539 - fix pom version
+
 * Sun Sep 7 2014 Ade Lee <alee@redhat.com> - 3.0.6-1
 - Resolves: rhbz1139067 - rebase to 3.0.6
 

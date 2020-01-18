@@ -1,0 +1,12 @@
+diff -up Resteasy-3.0.6.Final/pom.xml.1280539 Resteasy-3.0.6.Final/pom.xml
+--- Resteasy-3.0.6.Final/pom.xml.1280539	2016-06-24 15:16:14.043320655 +0200
++++ Resteasy-3.0.6.Final/pom.xml	2016-06-24 15:16:38.648927622 +0200
+@@ -5,7 +5,7 @@
+     <name>RESTEasy</name>
+     <groupId>org.jboss.resteasy</groupId>
+     <artifactId>resteasy-pom</artifactId>
+-    <version>1.2.GA</version>
++    <version>3.0.6</version>
+     <packaging>pom</packaging>
+ 
+     <url>http://rest-easy.org</url>

@@ -1,0 +1,11 @@
+diff -up Resteasy-3.0.6.Final/jaxrs/resteasy-jaxrs/src/main/resources/META-INF/services/javax.ws.rs.ext.Providers.1378619 Resteasy-3.0.6.Final/jaxrs/resteasy-jaxrs/src/main/resources/META-INF/services/javax.ws.rs.ext.Providers
+--- Resteasy-3.0.6.Final/jaxrs/resteasy-jaxrs/src/main/resources/META-INF/services/javax.ws.rs.ext.Providers.1378619	2016-09-26 17:16:26.991046613 -0400
++++ Resteasy-3.0.6.Final/jaxrs/resteasy-jaxrs/src/main/resources/META-INF/services/javax.ws.rs.ext.Providers	2016-09-26 17:17:19.504200735 -0400
+@@ -12,7 +12,6 @@ org.jboss.resteasy.plugins.providers.Fil
+ org.jboss.resteasy.plugins.providers.FileRangeWriter
+ org.jboss.resteasy.plugins.providers.StreamingOutputProvider
+ org.jboss.resteasy.plugins.providers.IIOImageProvider
+-org.jboss.resteasy.plugins.providers.SerializableProvider
+ org.jboss.resteasy.plugins.interceptors.CacheControlFeature
+ org.jboss.resteasy.plugins.interceptors.encoding.AcceptEncodingGZIPInterceptor
+ org.jboss.resteasy.plugins.interceptors.encoding.AcceptEncodingGZIPFilter

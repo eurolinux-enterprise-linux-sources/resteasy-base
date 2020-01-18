@@ -1,0 +1,22 @@
+diff -up Resteasy-3.0.6.Final/pom.xml.1357624 Resteasy-3.0.6.Final/pom.xml
+--- Resteasy-3.0.6.Final/pom.xml.1357624	2016-07-28 12:11:35.780819192 +0200
++++ Resteasy-3.0.6.Final/pom.xml	2016-07-28 12:13:14.163986190 +0200
+@@ -8,6 +8,18 @@
+     <version>3.0.6</version>
+     <packaging>pom</packaging>
+ 
++    <profiles>
++        <profile>
++            <id>disable-java8-doclint</id>
++            <activation>
++                <jdk>[1.8,)</jdk>
++            </activation>
++            <properties>
++                <additionalparam>-Xdoclint:none</additionalparam>
++            </properties>
++        </profile>
++    </profiles>
++
+     <url>http://rest-easy.org</url>
+ 
+     <modules>
