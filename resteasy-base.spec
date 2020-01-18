@@ -4,7 +4,7 @@
 
 Name:           resteasy-base
 Version:        2.3.5
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Framework for RESTful Web services and Java applications
 License:        ASL 2.0 and CDDL
 URL:            http://www.jboss.org/resteasy
@@ -13,6 +13,7 @@ URL:            http://www.jboss.org/resteasy
 # cd Resteasy
 # git archive --prefix=resteasy-2.3.5.Final/ --output=resteasy-2.3.5.Final.tgz 2.3.5.Final
 Source0:        %{prodname}-%{namedversion}.tgz
+Patch0:		%{prodname}-%{namedversion}-resteasy-1073.patch
 
 BuildArch: noarch
 
@@ -123,6 +124,7 @@ Summary:        Module tjws for %{name}
 
 %prep
 %setup -q -n %{prodname}-%{namedversion}
+%patch0 -p1
 
 # remove unneeded modules
 %pom_disable_module resteasy-jaxrs-war
@@ -236,6 +238,9 @@ tjws tjws
 
 
 %changelog
+* Fri Jul 25 2014 Ade Lee <alee@redhat.com> - 2.3.5-3
+- Resolves: rhbz1121917 -  CVE-2014-3490: XXE via parameter entities
+
 * Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 2.3.5-2
 - Mass rebuild 2013-12-27
 
