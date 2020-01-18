@@ -4,7 +4,7 @@
 
 Name:           resteasy-base
 Version:        2.3.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Framework for RESTful Web services and Java applications
 License:        ASL 2.0 and CDDL
 URL:            http://www.jboss.org/resteasy
@@ -236,6 +236,9 @@ tjws tjws
 
 
 %changelog
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 2.3.5-2
+- Mass rebuild 2013-12-27
+
 * Thu Oct 24 2013 Ade Lee <alee@redhat.com> - 2.3.5-1
 - Resolved Bugzilla #1017459 - resteasy-base contains known vulnerable components
 
