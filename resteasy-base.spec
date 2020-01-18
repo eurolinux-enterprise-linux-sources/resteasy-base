@@ -3,17 +3,19 @@
 %global prodname resteasy
 
 Name:           resteasy-base
-Version:        2.3.5
-Release:        3%{?dist}
+Version:        3.0.6
+Release:        1%{?dist}
 Summary:        Framework for RESTful Web services and Java applications
 License:        ASL 2.0 and CDDL
 URL:            http://www.jboss.org/resteasy
 
 # git clone git://github.com/resteasy/Resteasy.git
 # cd Resteasy
-# git archive --prefix=resteasy-2.3.5.Final/ --output=resteasy-2.3.5.Final.tgz 2.3.5.Final
-Source0:        %{prodname}-%{namedversion}.tgz
-Patch0:		%{prodname}-%{namedversion}-resteasy-1073.patch
+# git archive --prefix=resteasy-3.0.6.Final/ --output=resteasy-3.0.6.Final.tar.gz 3.0.6.Final
+Source0:        %{prodname}-%{namedversion}.tar.gz
+Patch0:         0001-Mime4j-0.7.2-support.patch
+Patch1:         0002-bcmail-api-change.patch
+Patch2:		%{prodname}-%{namedversion}-resteasy-1073.patch
 
 BuildArch: noarch
 
@@ -49,6 +51,8 @@ Requires:       resteasy-base-jaxrs             = %{version}-%{release}
 Requires:       resteasy-base-jaxrs-all         = %{version}-%{release}
 Requires:       resteasy-base-jettison-provider = %{version}-%{release}
 Requires:       resteasy-base-tjws              = %{version}-%{release}
+Requires:	resteasy-base-client		= %{version}-%{release}
+Requires:	resteasy-base-resteasy-pom	= %{version}-%{release}
 
 
 %description
@@ -121,65 +125,97 @@ Summary:        Module tjws for %{name}
 %description    tjws
 %{extdesc} %{summary}.
 
+%package	client
+Summary: 	Client for %{name}
+
+%description    client
+%{extdesc} %{summary}.
+
+%package        resteasy-pom
+Summary:        Module pom for %{name}
+
+%description    resteasy-pom
+%{extdesc} %{summary}.
 
 %prep
-%setup -q -n %{prodname}-%{namedversion}
+%setup -q -n Resteasy-%{namedversion}
+
+# Disable unnecesary modules
+%pom_disable_module examples jaxrs/pom.xml
+%pom_disable_module profiling-tests jaxrs/pom.xml
+%pom_disable_module resteasy-test-data jaxrs/pom.xml
+%pom_disable_module war-tests jaxrs/pom.xml
+%pom_disable_module resteasy-links jaxrs/pom.xml
+%pom_disable_module jboss-modules jaxrs/pom.xml
+
+%pom_disable_module resteasy-cache jaxrs/pom.xml
+%pom_disable_module security jaxrs/pom.xml
+%pom_disable_module resteasy-spring jaxrs/pom.xml
+%pom_disable_module resteasy-bom jaxrs/pom.xml
+%pom_disable_module resteasy-guice jaxrs/pom.xml
+%pom_disable_module resteasy-jsapi jaxrs/pom.xml
+%pom_disable_module async-http-servlet-3.0 jaxrs/pom.xml
+%pom_disable_module resteasy-cdi jaxrs/pom.xml
+%pom_disable_module server-adapters jaxrs/pom.xml
+%pom_disable_module resteasy-jaxrs-testsuite jaxrs/pom.xml
+%pom_disable_module resteasy-servlet-initializer jaxrs/pom.xml
+
+%pom_disable_module resteasy-oauth jaxrs/security/pom.xml
+%pom_disable_module login-module-authenticator jaxrs/security/pom.xml
+%pom_disable_module skeleton-key-idm jaxrs/security/pom.xml
+%pom_disable_module keystone/keystone-as7 jaxrs/security/pom.xml
+%pom_disable_module keystone/keystone-as7-modules jaxrs/security/pom.xml
+
+%pom_disable_module async-http-servlet-3.0-test jaxrs/async-http-servlet-3.0/pom.xml
+%pom_disable_module callback-test jaxrs/async-http-servlet-3.0/pom.xml
+
+%pom_disable_module fastinfoset jaxrs/providers/pom.xml
+%pom_disable_module multipart jaxrs/providers/pom.xml
+%pom_disable_module yaml jaxrs/providers/pom.xml
+%pom_disable_module resteasy-html jaxrs/providers/pom.xml
+%pom_disable_module test-resteasy-html jaxrs/providers/pom.xml
+%pom_disable_module test-all-jaxb jaxrs/providers/pom.xml
+%pom_disable_module test-jackson-jaxb-coexistence jaxrs/providers/pom.xml
+%pom_disable_module resteasy-hibernatevalidator-provider jaxrs/providers/pom.xml
+%pom_disable_module jackson2 jaxrs/providers/pom.xml
+%pom_disable_module json-p-ee7 jaxrs/providers/pom.xml
+%pom_disable_module resteasy-validator-provider-11 jaxrs/providers/pom.xml
+
+# Leave Netty 3, disable Netty 4
+%pom_disable_module resteasy-netty4 jaxrs/server-adapters/pom.xml
+
+# Replace 2.5 servlet with the jboss-servlet-2.5-api provides
+for m in jaxrs/tjws; do
+%pom_remove_dep "javax.servlet:servlet-api" ${m}/pom.xml
+%pom_add_dep "org.jboss.spec.javax.servlet:jboss-servlet-api_2.5_spec" ${m}/pom.xml
+done
+
+# Need to be patched to work with Jetty 9
+rm jaxrs/resteasy-spring/src/main/java/org/jboss/resteasy/springmvc/JettyLifecycleManager.java
+
+%pom_remove_dep "org.springframework:spring-test" jaxrs/resteasy-spring/pom.xml
+%pom_remove_dep "org.mortbay.jetty:jetty" jaxrs/resteasy-spring/pom.xml
+%pom_add_dep "org.eclipse.jetty:jetty-server" jaxrs/resteasy-spring/pom.xml
+%pom_remove_dep net.jcip:jcip-annotations jaxrs/pom.xml
+%pom_remove_dep net.jcip:jcip-annotations jaxrs/resteasy-jaxrs/pom.xml
+%pom_remove_plugin com.atlassian.maven.plugins:maven-clover2-plugin jaxrs/pom.xml
+%pom_remove_plugin com.atlassian.maven.plugins:maven-clover2-plugin jaxrs/resteasy-jaxrs/pom.xml
+
+# Fixing JDK7 ASCII issues
+files='
+jaxrs/resteasy-jsapi/src/main/java/org/jboss/resteasy/jsapi/JSAPIWriter.java
+jaxrs/resteasy-jsapi/src/main/java/org/jboss/resteasy/jsapi/JSAPIServlet.java
+jaxrs/resteasy-jsapi/src/main/java/org/jboss/resteasy/jsapi/ServiceRegistry.java
+jaxrs/providers/jaxb/src/main/java/org/jboss/resteasy/plugins/providers/jaxb/ExternalEntityUnmarshaller.java
+'
+
+for f in ${files}; do
+native2ascii -encoding UTF8 ${f} ${f}
+done
+
 %patch0 -p1
-
-# remove unneeded modules
-%pom_disable_module resteasy-jaxrs-war
-%pom_disable_module resteasy-cache
-%pom_disable_module eagledns
-%pom_disable_module security
-%pom_disable_module resteasy-links
-%pom_disable_module arquillian
-%pom_disable_module async-http-jbossweb
-%pom_disable_module async-http-tomcat
-%pom_disable_module resteasy-spring
-%pom_disable_module war-tests
-%pom_disable_module examples
-%pom_disable_module profiling-tests
-%pom_disable_module resteasy-test-data
-%pom_disable_module resteasy-bom
-%pom_disable_module resteasy-guice
-%pom_disable_module resteasy-jsapi
-%pom_disable_module async-http-servlet-3.0
-%pom_disable_module resteasy-cdi
-%pom_disable_module jboss-modules
-%pom_disable_module server-adapters
-
-%pom_disable_module fastinfoset providers
-%pom_disable_module multipart providers
-%pom_disable_module yaml providers
-%pom_disable_module resteasy-html providers
-%pom_disable_module test-resteasy-html providers
-%pom_disable_module test-all-jaxb providers
-%pom_disable_module test-jackson-jaxb-coexistence providers
-%pom_disable_module resteasy-hibernatevalidator-provider providers
-
-%pom_remove_dep net.jcip:jcip-annotations
-%pom_remove_dep net.jcip:jcip-annotations resteasy-jaxrs
-
-%pom_remove_plugin com.atlassian.maven.plugins:maven-clover2-plugin
-%pom_remove_plugin com.atlassian.maven.plugins:maven-clover2-plugin resteasy-jaxrs
-
-# Fix gId:aId javax.servlet:servlet-api ->
-# org.jboss.spec.javax.servlet:jboss-servlet-api_2.5_spec
-# in resteasy-jaxrs/pom.xml:
-%pom_xpath_replace "pom:dependency[pom:artifactId[text()='servlet-api']]" \
-  "<dependency>
-     <groupId>org.jboss.spec.javax.servlet</groupId>
-     <artifactId>jboss-servlet-api_2.5_spec</artifactId>
-     <scope>provided</scope>
-   </dependency>" resteasy-jaxrs
-# in tjws/pom.xml:
-%pom_xpath_replace "pom:dependency[pom:artifactId[text()='servlet-api']]" \
-  "<dependency>
-     <groupId>org.jboss.spec.javax.servlet</groupId>
-     <artifactId>jboss-servlet-api_2.5_spec</artifactId>
-     <scope>provided</scope>
-   </dependency>" tjws
-
+%patch1 -p0
+%patch2 -p1
 
 # additional gId:aId for jaxrs-api
 %mvn_alias ":jaxrs-api" "org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_1.1_spec"
@@ -188,39 +224,25 @@ Summary:        Module tjws for %{name}
 # build, skip tests, singleton packaging
 %mvn_build -f -s
 
+# Create Jandex index file(s)
+# Not all files are required by JBoss AS7, but let's create indexes for all of them
+find -name 'resteasy-*-%{namedversion}.jar' | while read f; do
+  java -cp $(build-classpath jandex) org.jboss.jandex.Main -j ${f}
+done
+
 %install
-# Install jars, poms and dependencies maps
 %mvn_install
 
-# Create also the Jandex index files
-# Required by JBoss AS7
-while read module_path artifact_id additional_aid_gid
-do
-  base_name=${module_path}/target/${artifact_id}-%{namedversion}
-  jandex_file=${base_name}-jandex.jar
-  if [ -f ${base_name}.jar ]; then
-    java -cp $(build-classpath jandex) org.jboss.jandex.Main -j ${base_name}.jar
-    install -pm 644 ${jandex_file} %{buildroot}%{_javadir}/%{name}/${artifact_id}-jandex.jar
-  fi
-done <<'.'
-. jaxrs-all
-jaxrs-api jaxrs-api org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_1.1_spec
-providers/jackson resteasy-jackson-provider
-providers/jaxb resteasy-jaxb-provider
-providers/jettison resteasy-jettison-provider
-providers/resteasy-atom resteasy-atom-provider
-resteasy-jaxrs resteasy-jaxrs
-tjws tjws
-.
-
+find -name "resteasy-*-jandex.jar" | while read f; do
+  install -pm 644 ${f} %{buildroot}%{_javadir}/%{name}/$(basename -s "-%{namedversion}-jandex.jar" $f)-jandex.jar
+done
 
 %files -f .mfiles
 %dir %{_javadir}/%{name}
-%doc License.html README.html
+%doc jaxrs/License.html jaxrs/README.html
 %files jaxrs-all -f .mfiles-resteasy-jaxrs-all
 %files providers-pom -f .mfiles-providers-pom
 %files jaxrs-api -f .mfiles-jaxrs-api
-%{_javadir}/%{name}/jaxrs-api-jandex.jar
 %files atom-provider -f .mfiles-resteasy-atom-provider
 %{_javadir}/%{name}/resteasy-atom-provider-jandex.jar
 %files jackson-provider -f .mfiles-resteasy-jackson-provider
@@ -232,14 +254,19 @@ tjws tjws
 %files jettison-provider -f .mfiles-resteasy-jettison-provider
 %{_javadir}/%{name}/resteasy-jettison-provider-jandex.jar
 %files tjws -f .mfiles-tjws
-%{_javadir}/%{name}/tjws-jandex.jar
 %files javadoc -f .mfiles-javadoc
-%doc License.html
+%doc jaxrs/License.html
+%files client -f .mfiles-resteasy-client
+%{_javadir}/%{name}/resteasy-client-jandex.jar
+%files resteasy-pom -f .mfiles-resteasy-pom
 
 
 %changelog
-* Fri Jul 25 2014 Ade Lee <alee@redhat.com> - 2.3.5-3
-- Resolves: rhbz1121917 -  CVE-2014-3490: XXE via parameter entities
+* Sun Sep 7 2014 Ade Lee <alee@redhat.com> - 3.0.6-1
+- Resolves: rhbz1139067 - rebase to 3.0.6
+
+* Mon Aug 25 2014 Ade Lee <alee@redhat.com> - 2.3.5-3
+- Resolves: rhbz1121918 -  CVE-2014-3490: XXE via parameter entities
 
 * Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 2.3.5-2
 - Mass rebuild 2013-12-27

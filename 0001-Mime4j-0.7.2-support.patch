@@ -1,0 +1,246 @@
+From 0e66cb23968c8ec56e4c26566790a8f09f380bca Mon Sep 17 00:00:00 2001
+From: Marek Goldmann <marek.goldmann@gmail.com>
+Date: Tue, 16 Jul 2013 14:14:07 +0200
+Subject: [PATCH] Mime4j 0.7.2 support
+
+---
+ jaxrs/pom.xml                                      | 14 ++++-
+ jaxrs/providers/multipart/pom.xml                  | 12 ++++-
+ .../multipart/MultipartFormDataInputImpl.java      |  6 +--
+ .../providers/multipart/MultipartInputImpl.java    | 61 ++++++++++------------
+ .../multipart/MultipartRelatedInputImpl.java       |  4 +-
+ jaxrs/security/resteasy-crypto/pom.xml             | 10 +++-
+ 6 files changed, 64 insertions(+), 43 deletions(-)
+ mode change 100755 => 100644 jaxrs/pom.xml
+
+diff --git a/jaxrs/pom.xml b/jaxrs/pom.xml
+old mode 100755
+new mode 100644
+index 062e8da..45e5e8d
+--- a/jaxrs/pom.xml
++++ b/jaxrs/pom.xml
+@@ -251,8 +251,18 @@
+             </dependency>
+             <dependency>
+                 <groupId>org.apache.james</groupId>
+-                <artifactId>apache-mime4j</artifactId>
+-                <version>0.6</version>
++                <artifactId>apache-mime4j-core</artifactId>
++                <version>0.7.2</version>
++             </dependency>
++            <dependency>
++                <groupId>org.apache.james</groupId>
++                <artifactId>apache-mime4j-storage</artifactId>
++                <version>0.7.2</version>
++             </dependency>
++            <dependency>
++                <groupId>org.apache.james</groupId>
++                <artifactId>apache-mime4j-dom</artifactId>
++                <version>0.7.2</version>
+              </dependency>
+             <dependency>
+                 <groupId>junit</groupId>
+diff --git a/jaxrs/providers/multipart/pom.xml b/jaxrs/providers/multipart/pom.xml
+index 16bdbd2..a6b25f0 100755
+--- a/jaxrs/providers/multipart/pom.xml
++++ b/jaxrs/providers/multipart/pom.xml
+@@ -34,7 +34,15 @@
+         </dependency>
+         <dependency>
+             <groupId>org.apache.james</groupId>
+-            <artifactId>apache-mime4j</artifactId>
++            <artifactId>apache-mime4j-core</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.james</groupId>
++            <artifactId>apache-mime4j-dom</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.james</groupId>
++            <artifactId>apache-mime4j-storage</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>javax.servlet</groupId>
+@@ -81,4 +89,4 @@
+         </plugins>
+     </build>
+ 
+-</project>
+\ No newline at end of file
++</project>
+diff --git a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartFormDataInputImpl.java b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartFormDataInputImpl.java
+index d9ed2ad..b7aab17 100644
+--- a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartFormDataInputImpl.java
++++ b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartFormDataInputImpl.java
+@@ -1,9 +1,9 @@
+ package org.jboss.resteasy.plugins.providers.multipart;
+ 
+-import org.apache.james.mime4j.field.ContentDispositionField;
+-import org.apache.james.mime4j.field.FieldName;
++import org.apache.james.mime4j.dom.field.ContentDispositionField;
++import org.apache.james.mime4j.dom.field.FieldName;
+ import org.apache.james.mime4j.message.BodyPart;
+-import org.apache.james.mime4j.parser.Field;
++import org.apache.james.mime4j.stream.Field;
+ import org.jboss.resteasy.util.GenericType;
+ 
+ import javax.ws.rs.core.MediaType;
+diff --git a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartInputImpl.java b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartInputImpl.java
+index 938c88e..01ddfa1 100644
+--- a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartInputImpl.java
++++ b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartInputImpl.java
+@@ -4,22 +4,22 @@ import org.apache.james.mime4j.MimeException;
+ import org.apache.james.mime4j.MimeIOException;
+ import org.apache.james.mime4j.codec.Base64InputStream;
+ import org.apache.james.mime4j.codec.QuotedPrintableInputStream;
+-import org.apache.james.mime4j.descriptor.BodyDescriptor;
+-import org.apache.james.mime4j.field.ContentTypeField;
+-import org.apache.james.mime4j.message.BinaryBody;
+-import org.apache.james.mime4j.message.Body;
++import org.apache.james.mime4j.message.MessageImpl;
++import org.apache.james.mime4j.parser.AbstractContentHandler;
++import org.apache.james.mime4j.stream.BodyDescriptor;
+ import org.apache.james.mime4j.message.BodyFactory;
++import org.apache.james.mime4j.dom.MessageBuilder;
++import org.apache.james.mime4j.dom.MessageServiceFactory;
++import org.apache.james.mime4j.dom.field.ContentTypeField;
++import org.apache.james.mime4j.dom.BinaryBody;
++import org.apache.james.mime4j.dom.Body;
++import org.apache.james.mime4j.dom.Entity;
+ import org.apache.james.mime4j.message.BodyPart;
+-import org.apache.james.mime4j.message.Entity;
+-import org.apache.james.mime4j.message.Message;
+-import org.apache.james.mime4j.message.MessageBuilder;
+-import org.apache.james.mime4j.message.Multipart;
+-import org.apache.james.mime4j.message.TextBody;
+-import org.apache.james.mime4j.parser.Field;
++import org.apache.james.mime4j.dom.Message;
++import org.apache.james.mime4j.dom.Multipart;
++import org.apache.james.mime4j.dom.TextBody;
++import org.apache.james.mime4j.stream.Field;
+ import org.apache.james.mime4j.parser.MimeStreamParser;
+-import org.apache.james.mime4j.storage.DefaultStorageProvider;
+-import org.apache.james.mime4j.storage.StorageProvider;
+-import org.apache.james.mime4j.util.CharsetUtil;
+ import org.apache.james.mime4j.util.MimeUtil;
+ import org.jboss.resteasy.spi.HttpRequest;
+ import org.jboss.resteasy.spi.ResteasyProviderFactory;
+@@ -43,6 +43,7 @@ import java.lang.annotation.Annotation;
+ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Type;
++import java.nio.charset.Charset;
+ import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.Iterator;
+@@ -65,7 +66,7 @@ public class MultipartInputImpl implements MultipartInput
+    protected String defaultPartCharset = null;
+ 
+    // We hack MIME4j so that it always returns a BinaryBody so we don't have to deal with Readers and their charset conversions
+-   private static class BinaryOnlyMessageBuilder extends MessageBuilder
++   private static class BinaryOnlyMessageBuilder extends AbstractContentHandler
+    {
+       private Method expectMethod;
+       private java.lang.reflect.Field bodyFactoryField;
+@@ -88,18 +89,6 @@ public class MultipartInputImpl implements MultipartInput
+          }
+       }
+ 
+-      private BinaryOnlyMessageBuilder(Entity entity)
+-      {
+-         super(entity);
+-         init();
+-      }
+-
+-      private BinaryOnlyMessageBuilder(Entity entity, StorageProvider storageProvider)
+-      {
+-         super(entity, storageProvider);
+-         init();
+-      }
+-
+       @Override
+       public void body(BodyDescriptor bd, InputStream is) throws MimeException, IOException
+       {
+@@ -143,13 +132,13 @@ public class MultipartInputImpl implements MultipartInput
+       }
+    }
+ 
+-   private static class BinaryMessage extends Message
++   private static class BinaryMessage extends MessageImpl
+    {
+       private BinaryMessage(InputStream is) throws IOException, MimeIOException
+       {
+          try {
+-            MimeStreamParser parser = new MimeStreamParser(null);
+-            parser.setContentHandler(new BinaryOnlyMessageBuilder(this, DefaultStorageProvider.getInstance()));
++            MimeStreamParser parser = new MimeStreamParser();
++            parser.setContentHandler(new BinaryOnlyMessageBuilder());
+             parser.parse(is);
+          } catch (MimeException e) {
+             throw new MimeIOException(e);
+@@ -194,8 +183,14 @@ public class MultipartInputImpl implements MultipartInput
+ 
+    public void parse(InputStream is) throws IOException
+    {
+-      mimeMessage = new BinaryMessage(addHeaderToHeadlessStream(is));
+-      extractParts();
++      try {
++         MessageServiceFactory factory = MessageServiceFactory.newInstance();
++         MessageBuilder builder = factory.newMessageBuilder();
++         mimeMessage = builder.parseMessage(addHeaderToHeadlessStream(is));
++         extractParts();
++      } catch (MimeException e) {
++         throw new IOException("Couldn't parse message", e);
++      }
+    }
+ 
+    protected InputStream addHeaderToHeadlessStream(InputStream is)
+@@ -225,8 +220,8 @@ public class MultipartInputImpl implements MultipartInput
+    protected void extractParts() throws IOException
+    {
+       Multipart multipart = (Multipart) mimeMessage.getBody();
+-      for (BodyPart bodyPart : multipart.getBodyParts())
+-         parts.add(extractPart(bodyPart));
++      for (Entity bodyPart : multipart.getBodyParts())
++        parts.add(extractPart((BodyPart) bodyPart));
+    }
+ 
+    protected InputPart extractPart(BodyPart bodyPart) throws IOException
+diff --git a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartRelatedInputImpl.java b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartRelatedInputImpl.java
+index 698f937..fa2d889 100644
+--- a/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartRelatedInputImpl.java
++++ b/jaxrs/providers/multipart/src/main/java/org/jboss/resteasy/plugins/providers/multipart/MultipartRelatedInputImpl.java
+@@ -1,7 +1,7 @@
+ package org.jboss.resteasy.plugins.providers.multipart;
+ 
+-import org.apache.james.mime4j.field.ContentTypeField;
+-import org.apache.james.mime4j.field.FieldName;
++import org.apache.james.mime4j.dom.field.ContentTypeField;
++import org.apache.james.mime4j.dom.field.FieldName;
+ import org.apache.james.mime4j.message.BodyPart;
+ 
+ import javax.ws.rs.core.MediaType;
+diff --git a/jaxrs/security/resteasy-crypto/pom.xml b/jaxrs/security/resteasy-crypto/pom.xml
+index 855f791..bd23c9f 100755
+--- a/jaxrs/security/resteasy-crypto/pom.xml
++++ b/jaxrs/security/resteasy-crypto/pom.xml
+@@ -70,7 +70,15 @@
+         </dependency>
+         <dependency>
+             <groupId>org.apache.james</groupId>
+-            <artifactId>apache-mime4j</artifactId>
++            <artifactId>apache-mime4j-dom</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.james</groupId>
++            <artifactId>apache-mime4j-core</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.james</groupId>
++            <artifactId>apache-mime4j-storage</artifactId>
+         </dependency>
+     </dependencies>
+     <build>
+-- 
+1.8.3.1
+
